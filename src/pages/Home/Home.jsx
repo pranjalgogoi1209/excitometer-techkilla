@@ -1,10 +1,12 @@
+import "./Home.scss";
+
+import { useEffect, useState, useRef } from "react";
+
 import Header from "../../components/Header/Header";
 import Meter from "../../components/Meter/Meter";
 import Pillar from "../../components/Pillar/Pillar";
 import { db } from "../../firebase-config";
 import { onSnapshot, doc } from "firebase/firestore";
-import "./Home.scss";
-import { useEffect, useState, useRef } from "react";
 
 const Home = () => {
   const [volume, setVolume] = useState(0);
@@ -19,7 +21,7 @@ const Home = () => {
   useEffect(() => {
     const unsubscribe = onSnapshot(
       doc(db, "dulcoflex-excitometer", "excitometer"),
-      (snapshot) => {
+      snapshot => {
         if (snapshot.exists()) {
           setMicEnabled(snapshot.data().micEnabled);
         }
@@ -33,7 +35,7 @@ const Home = () => {
     cancelAnimationFrame(animationRef.current);
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
@@ -101,7 +103,7 @@ const Home = () => {
     let meter = Math.min(100, Math.round(rms * 350));
 
     // Smooth animation
-    setVolume((prev) => Math.round(prev * 0.8 + meter * 0.2));
+    setVolume(prev => Math.round(prev * 0.8 + meter * 0.2));
 
     animationRef.current = requestAnimationFrame(updateVolume);
   };
@@ -130,7 +132,7 @@ const Home = () => {
       <div className="content">
         <Pillar side="left" volume={volume} />
 
-        <Meter />
+        <Meter volume={volume} />
 
         <Pillar side="right" volume={volume} />
       </div>
