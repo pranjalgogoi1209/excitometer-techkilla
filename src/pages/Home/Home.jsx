@@ -38,7 +38,10 @@ const Home = () => {
     }
 
     if (audioContextRef.current) {
-      await audioContextRef.current.close();
+      if (audioContextRef.current.state !== "closed") {
+        await audioContextRef.current.close();
+      }
+
       audioContextRef.current = null;
     }
 
@@ -117,7 +120,8 @@ const Home = () => {
 
   useEffect(() => {
     console.log(volume);
-  }, [volume]);
+    console.log(micEnabled, "mic enabled");
+  }, [volume, micEnabled]);
 
   return (
     <div className="home">
