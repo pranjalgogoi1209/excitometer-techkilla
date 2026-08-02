@@ -1,16 +1,18 @@
+import "./Home.scss";
+
+import { useEffect, useState, useRef } from "react";
+
 import Header from "../../components/Header/Header";
 import Meter from "../../components/Meter/Meter";
 import Pillar from "../../components/Pillar/Pillar";
 import { db } from "../../firebase-config";
 import { onSnapshot, doc } from "firebase/firestore";
-import "./Home.scss";
-import { useEffect, useState, useRef } from "react";
 
 const Home = () => {
   const [volume, setVolume] = useState(0);
   const [micEnabled, setMicEnabled] = useState(false);
   const [backupGainEnabled, setBackupGainEnabled] = useState(false);
-  const [backupGain, setBackupGain] = useState(20);
+  const [backupGain, setBackupGain] = useState(0);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -23,7 +25,11 @@ const Home = () => {
       doc(db, "dulcoflex-excitometer", "excitometer"),
       (snapshot) => {
         if (snapshot.exists()) {
-          setMicEnabled(snapshot.data().micEnabled);
+          const data = snapshot.data();
+
+          setMicEnabled(data.micEnabled ?? false);
+          setBackupGainEnabled(data.backupGainEnabled ?? false);
+          setBackupGain(data.backupGain ?? 20);
         }
       },
     );
@@ -33,6 +39,8 @@ const Home = () => {
 
   const stopMic = async () => {
     cancelAnimationFrame(animationRef.current);
+
+    animationRef.current = null;
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -89,6 +97,8 @@ const Home = () => {
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
 
+    if (!analyser || !dataArray) return;
+
     analyser.getFloatTimeDomainData(dataArray);
 
     let sum = 0;
@@ -99,30 +109,60 @@ const Home = () => {
 
     const rms = Math.sqrt(sum / dataArray.length);
 
-    // Convert RMS -> Meter (0-100)
-    let meter = Math.min(100, Math.round(rms * 350));
+    // Actual crowd volume
+    const actualVolume = Math.min(100, Math.round(rms * 350));
 
-    // Smooth animation
-    setVolume((prev) => Math.round(prev * 0.8 + meter * 0.2));
+    // Apply backup gain as a boost
+    const finalVolume = backupGainEnabled
+      ? Math.min(100, actualVolume + backupGain)
+      : actualVolume;
+
+    let displayVolume = finalVolume;
+
+    // Clamp before smoothing
+    if (displayVolume <= 2) {
+      displayVolume = 0;
+    }
+
+    if (displayVolume >= 98) {
+      displayVolume = 100;
+    }
+
+    // Smooth animation and clamp again
+    setVolume((prev) => {
+      let smoothed = Math.round(prev * 0.8 + displayVolume * 0.2);
+
+      if (smoothed <= 2) smoothed = 0;
+      if (smoothed >= 98) smoothed = 100;
+
+      return smoothed;
+    });
 
     animationRef.current = requestAnimationFrame(updateVolume);
   };
 
   useEffect(() => {
-    if (micEnabled) {
-      startMic();
-    } else {
-      stopMic();
-    }
+    let mounted = true;
+
+    const restartMic = async () => {
+      await stopMic();
+
+      if (mounted && micEnabled) {
+        await startMic();
+      }
+    };
+
+    restartMic();
 
     return () => {
+      mounted = false;
       stopMic();
     };
-  }, [micEnabled]);
+  }, [micEnabled, backupGainEnabled, backupGain]);
 
   useEffect(() => {
     console.log(volume);
-    console.log(micEnabled, "mic enabled");
+    console.log(micEnabled, backupGain, "mic enabled");
   }, [volume, micEnabled]);
 
   return (
@@ -132,7 +172,7 @@ const Home = () => {
       <div className="content">
         <Pillar side="left" volume={volume} />
 
-        <Meter />
+        <Meter volume={volume} />
 
         <Pillar side="right" volume={volume} />
       </div>

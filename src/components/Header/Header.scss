@@ -1,3 +1,5 @@
+@use "./../../styles/abstracts/variables" as *;
+
 .header {
   display: flex;
   flex-direction: column;
@@ -17,7 +19,7 @@
     font-weight: 800;
     letter-spacing: 2px;
 
-    color: #3a8b2b;
+    color: $primary;
     text-transform: uppercase;
   }
 
@@ -31,13 +33,13 @@
     span {
       width: 80px;
       height: 2px;
-      background: #3a8b2b;
+      background: $secondary;
     }
 
     p {
       font-size: 28px;
       font-weight: 600;
-      color: #3a8b2b;
+      color: $secondary;
       letter-spacing: 2px;
     }
   }
