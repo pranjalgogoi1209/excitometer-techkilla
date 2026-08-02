@@ -9,6 +9,8 @@ import { useEffect, useState, useRef } from "react";
 const Home = () => {
   const [volume, setVolume] = useState(0);
   const [micEnabled, setMicEnabled] = useState(false);
+  const [backupGainEnabled, setBackupGainEnabled] = useState(false);
+  const [backupGain, setBackupGain] = useState(20);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
