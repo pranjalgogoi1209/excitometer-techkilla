@@ -2,10 +2,41 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
+  // Reduced container height so it doesn't overflow or crowd upper UI
+  height: 10vh;
 
-  &__image {
-    width: 30vh;
-    user-select: none;
-    pointer-events: none;
+  &__bar {
+    width: 3px;
+    height: var(--bar-height);
+
+    border-radius: 999px;
+
+    background: linear-gradient(to top, #14853c, #46d44d, #c2ff48);
+
+    box-shadow:
+      0 0 3px rgba(120, 255, 80, 0.6),
+      0 0 6px rgba(120, 255, 80, 0.35);
+
+    // background: #83bf48;
+    // box-shadow: 0 0 3px #83bf48;
+
+    transform-origin: center;
+  }
+
+  &__bar--active {
+    // Subtle left-to-right ripple movement
+    animation: waveMove 1.2s ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+}
+
+@keyframes waveMove {
+  0%,
+  100% {
+    transform: scaleY(0.7);
+  }
+  50% {
+    transform: scaleY(1.1);
   }
 }

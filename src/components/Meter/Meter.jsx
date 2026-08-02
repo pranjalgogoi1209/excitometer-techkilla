@@ -6,7 +6,7 @@ import Mic from "../Mic/Mic";
 
 import "./Meter.scss";
 
-const Meter = ({ volume = 0 }) => {
+const Meter = ({ volume = 0, micEnabled }) => {
   const mapVolumeToAngle = (volume) => {
     console.log("Volume Meter", volume);
     const MIN_ANGLE = -70;
@@ -36,9 +36,9 @@ const Meter = ({ volume = 0 }) => {
 
       {/* Audio Section */}
       <div className="meter__audio">
-        <Wave />
+        <Wave volume={volume} micEnabled={micEnabled} />
         <Mic />
-        <Wave />
+        <Wave volume={volume} micEnabled={micEnabled} />
       </div>
     </section>
   );
