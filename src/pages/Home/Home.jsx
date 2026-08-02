@@ -1,8 +1,6 @@
 import Header from "../../components/Header/Header";
 import Meter from "../../components/Meter/Meter";
 import Pillar from "../../components/Pillar/Pillar";
-import Wave from "../../components/Wave/Wave";
-import Mic from "../../components/Mic/Mic";
 
 import "./Home.scss";
 import { useEffect, useState, useRef } from "react";
@@ -101,14 +99,6 @@ const Home = () => {
 
         <Pillar side="right" />
       </div>
-
-      {/* <div className="bottom">
-        <Wave />
-
-        <Mic />
-
-        <Wave />
-      </div> */}
     </div>
   );
 };

@@ -1,12 +1,19 @@
-import pillar from "../../assets/images/pillar.png";
+import pillarLeft from "../../assets/images/pillar-left.png";
+import pillarRight from "../../assets/images/pillar-right.png";
 
 import "./Pillar.scss";
 
 const Pillar = ({ side }) => {
+  const pillarImage = side === "left" ? pillarLeft : pillarRight;
+
   return (
     <aside className={`pillar pillar--${side}`}>
       <div className="pillar__wrapper">
-        <img src={pillar} alt={`${side} Pillar`} className="pillar__image" />
+        <img
+          src={pillarImage}
+          alt={`${side} Pillar`}
+          className="pillar__image"
+        />
 
         {/* Animated fill will come here */}
         {/* <div className="pillar__fill"></div> */}
