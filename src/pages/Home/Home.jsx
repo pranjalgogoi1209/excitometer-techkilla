@@ -178,11 +178,7 @@ const Home = () => {
 
           decayTimeout = setTimeout(async () => {
             try {
-              if (
-                !isMicEnabled &&
-                !showResultRef.current &&
-                currentCustomVol < 100
-              ) {
+              if (!showResultRef.current && currentCustomVol < 100) {
                 setCustomVolume(0);
                 setVolume(0);
                 await updateDoc(docRef, { customVolume: 0 });
