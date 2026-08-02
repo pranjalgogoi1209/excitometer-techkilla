@@ -36,9 +36,9 @@ const Meter = ({ volume = 0, micEnabled }) => {
 
       {/* Audio Section */}
       <div className="meter__audio">
-        <Wave volume={volume} micEnabled={micEnabled} />
+        <Wave volume={volume} micEnabled={true} />
         <Mic />
-        <Wave volume={volume} micEnabled={micEnabled} />
+        <Wave volume={volume} micEnabled={true} />
       </div>
     </section>
   );
