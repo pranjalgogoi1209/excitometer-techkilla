@@ -1,0 +1,15 @@
+.meter {
+  flex: 1;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  position: relative;
+
+  &__image {
+    width: 680px;
+    user-select: none;
+    pointer-events: none;
+  }
+}

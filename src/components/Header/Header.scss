@@ -1,0 +1,44 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding-top: 40px;
+
+  &__logo {
+    width: 280px;
+    object-fit: contain;
+  }
+
+  &__title {
+    margin-top: 20px;
+
+    font-size: 72px;
+    font-weight: 800;
+    letter-spacing: 2px;
+
+    color: #3a8b2b;
+    text-transform: uppercase;
+  }
+
+  &__subtitle {
+    margin-top: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    span {
+      width: 80px;
+      height: 2px;
+      background: #3a8b2b;
+    }
+
+    p {
+      font-size: 28px;
+      font-weight: 600;
+      color: #3a8b2b;
+      letter-spacing: 2px;
+    }
+  }
+}

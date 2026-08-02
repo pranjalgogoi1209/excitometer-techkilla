@@ -1,26 +1,32 @@
-import Header from "./../../components/Header";
-import Header from "./../../components/Pillar";
-import Header from "./../../components/Meter";
-import Header from "./../../components/Wave";
-import Header from "./../../components/Mic";
+import Header from "../../components/Header/Header";
+import Meter from "../../components/Meter/Meter";
+import Pillar from "../../components/Pillar/Pillar";
+import Wave from "../../components/Wave/Wave";
+import Mic from "../../components/Mic/Mic";
+
+import "./Home.scss";
 
 const Home = () => {
   return (
-    <>
+    <div className="home">
       <Header />
 
-      <main>
-        <Pillar />
+      <div className="content">
+        <Pillar side="left" />
 
         <Meter />
 
-        <Pillar />
-      </main>
+        <Pillar side="right" />
+      </div>
 
-      <Wave />
+      <div className="bottom">
+        <Wave />
 
-      <Mic />
-    </>
+        <Mic />
+
+        <Wave />
+      </div>
+    </div>
   );
 };
 

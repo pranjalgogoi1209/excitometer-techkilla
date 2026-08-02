@@ -1,0 +1,14 @@
+.pillar {
+  width: 220px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &__image {
+    width: 160px;
+
+    user-select: none;
+    pointer-events: none;
+  }
+}
