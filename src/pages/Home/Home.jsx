@@ -19,13 +19,13 @@ const Home = () => {
         <Pillar side="right" />
       </div>
 
-      <div className="bottom">
+      {/* <div className="bottom">
         <Wave />
 
         <Mic />
 
         <Wave />
-      </div>
+      </div> */}
     </div>
   );
 };
