@@ -1,0 +1,48 @@
+.side-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+  height: 100%;
+  padding: 1.2rem 0.8rem;
+  box-sizing: border-box;
+
+  background-color: #000000; // Dark frame background
+  border-right: 1px solid #0f2418;
+  border-left: 1px solid #0f2418;
+
+  &__bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    width: 46%; // Splits width evenly for two vertical columns
+    gap: 6px; // Gap between LED capsules
+  }
+
+  &__led {
+    flex: 1;
+    background-color: #0b2214; // Dim, OFF state
+    border-radius: 50px; // Creates the pill-shaped capsule from image
+    transition:
+      background-color 0.04s ease,
+      box-shadow 0.04s ease;
+
+    // Bright Green ON State matching your design
+    &--active {
+      background: linear-gradient(
+        to bottom,
+        #2eb972 0%,
+        #288d5a 45%,
+        #175231 100%
+      );
+
+      box-shadow:
+        inset 0 0 4px rgba(255, 255, 255, 0.18),
+        0 0 4px rgba(46, 185, 114, 0.35),
+        0 0 8px rgba(46, 185, 114, 0.25),
+        0 0 12px rgba(46, 185, 114, 0.18);
+    }
+  }
+}

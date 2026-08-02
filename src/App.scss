@@ -1,0 +1,22 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+
+  overflow: hidden;
+  background: #000;
+
+  &__left,
+  &__right {
+    width: 320px;
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  &__center {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+  }
+}

@@ -8,15 +8,15 @@
   padding-top: 20px;
 
   &__logo {
-    width: 280px;
+    width: 35vh;
     object-fit: contain;
   }
 
   &__title {
-    margin-top: 20px;
+    margin-top: 3vh;
 
-    font-size: 72px;
-    font-weight: 800;
+    font-size: 8vh;
+    font-weight: 700;
     letter-spacing: 2px;
 
     color: $primary;
@@ -24,7 +24,7 @@
   }
 
   &__subtitle {
-    margin-top: 10px;
+    margin-top: 1vh;
 
     display: flex;
     align-items: center;
@@ -37,7 +37,7 @@
     }
 
     p {
-      font-size: 28px;
+      font-size: 3.5vh;
       font-weight: 600;
       color: $secondary;
       letter-spacing: 2px;
