@@ -113,15 +113,19 @@ const Home = () => {
     const rawVolume = Math.min(100, Math.round(rms * 350));
     let micVolume = processMicVolume(rawVolume);
 
-    let finalVolume =
-      customVolumeRef.current > 0 ? customVolumeRef.current : micVolume;
+    if (customVolumeRef.current > 0) {
+      setVolume(customVolumeRef.current);
+    } else {
+      setVolume((prev) => {
+        if (micVolume === 0) return 0;
 
-    setVolume((prev) => {
-      if (finalVolume === 0) return 0;
-      let smoothed = Math.round(prev * 0.8 + finalVolume * 0.2);
-      if (smoothed <= 2) smoothed = 0;
-      return smoothed;
-    });
+        let smoothed = Math.round(prev * 0.8 + micVolume * 0.2);
+
+        if (smoothed <= 2) smoothed = 0;
+
+        return smoothed;
+      });
+    }
 
     animationRef.current = requestAnimationFrame(updateVolume);
   };
@@ -179,6 +183,7 @@ const Home = () => {
 
   // 2. Trigger Result screen when volume reaches 100%
   useEffect(() => {
+    console.log("volume from useeffect", volume);
     if (volume >= 100 && !showResult) {
       setShowResult(true);
       showResultRef.current = true; // Lock the result state
