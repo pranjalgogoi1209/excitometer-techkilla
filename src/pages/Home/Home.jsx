@@ -11,7 +11,7 @@ import { onSnapshot, doc } from "firebase/firestore";
 
 // Helper function to handle mic threshold & enforce 75 max cap
 const processMicVolume = (rawVolume) => {
-  const THRESHOLD = 5;
+  const THRESHOLD = 3;
   const MAX_MIC_OUTPUT = 75;
 
   // 1. Below threshold = 0 (silence background noise)
@@ -140,7 +140,14 @@ const Home = () => {
     let micVolume = processMicVolume(rawVolume);
 
     // Apply optional backup gain boost
-    let finalVolume = backupGainEnabled ? micVolume + backupGain : micVolume;
+    // Ignore tiny mic noise
+    let finalVolume;
+
+    if (micVolume <= 3) {
+      finalVolume = 0;
+    } else {
+      finalVolume = backupGainEnabled ? micVolume + backupGain : micVolume;
+    }
 
     // Smooth transition & zero-out clean thresholds
     setVolume((prev) => {
