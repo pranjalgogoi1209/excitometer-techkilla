@@ -2,14 +2,14 @@ import logo from "../../assets/images/logo.png";
 
 import "./Header.scss";
 
-const Header = ({ result = false }) => {
+const Header = ({ showResult = false }) => {
   return (
     <header className="header">
       <img src={logo} alt="Dulcoflex Logo" className="header__logo" />
 
-      {!result && <h1 className="header__title">EXCITOMETER</h1>}
+      {!showResult && <h1 className="header__title">EXCITOMETER</h1>}
 
-      {!result && (
+      {!showResult && (
         <div className="header__subtitle">
           <span></span>
 

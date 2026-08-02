@@ -14,26 +14,20 @@ const processMicVolume = (rawVolume) => {
   const THRESHOLD = 5;
   const MAX_MIC_OUTPUT = 75;
 
-  // 1. Below threshold = 0 (silence background noise)
   if (rawVolume <= THRESHOLD) {
     return 0;
   }
 
-  // 2. Map 5-100 raw input into 0-75 output range
   const scaled = ((rawVolume - THRESHOLD) / (100 - THRESHOLD)) * MAX_MIC_OUTPUT;
-
-  // Max output from mic can never pass 75
   return Math.min(MAX_MIC_OUTPUT, Math.round(scaled));
 };
 
 const Home = () => {
   const [volume, setVolume] = useState(0);
   const [micEnabled, setMicEnabled] = useState(false);
-  const [backupGainEnabled, setBackupGainEnabled] = useState(false);
-  const [backupGain, setBackupGain] = useState(0);
+  const [customVolume, setCustomVolume] = useState(0);
+  const [mode, setMode] = useState("manual");
   const [showResult, setShowResult] = useState(false);
-
-  const [manualVolume, setManualVolume] = useState(0);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -41,33 +35,12 @@ const Home = () => {
   const animationRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Sync state & manual volume overrides from Firestore
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      doc(db, "dulcoflex-excitometer", "excitometer"),
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
+  // Ref to hold current customVolume inside requestAnimationFrame loop
+  const customVolumeRef = useRef(0);
+  customVolumeRef.current = customVolume;
 
-          setMicEnabled(data.micEnabled ?? false);
-          setBackupGainEnabled(data.backupGainEnabled ?? false);
-
-          // If Admin updates manualVolume directly from Admin Panel (e.g., 0-100)
-          if (data.backupGain !== undefined) {
-            setBackupGain(data.backupGain ?? 20);
-          }
-        }
-      },
-    );
-
-    return unsubscribe;
-  }, []);
-
-  const resetBackupGain = async () => {
-    await updateDoc(doc(db, "dulcoflex-excitometer", "excitometer"), {
-      backupGain: 0,
-    });
-  };
+  // Ref to lock result screen so volume decay doesn't close it automatically
+  const showResultRef = useRef(false);
 
   const stopMic = async () => {
     if (animationRef.current) {
@@ -84,7 +57,6 @@ const Home = () => {
       if (audioContextRef.current.state !== "closed") {
         await audioContextRef.current.close();
       }
-
       audioContextRef.current = null;
     }
 
@@ -120,16 +92,11 @@ const Home = () => {
 
       updateVolume();
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
   const updateVolume = () => {
-    if (backupGainEnabled) {
-      animationRef.current = requestAnimationFrame(updateVolume);
-      return;
-    }
-
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
 
@@ -138,71 +105,94 @@ const Home = () => {
     analyser.getFloatTimeDomainData(dataArray);
 
     let sum = 0;
-
     for (let i = 0; i < dataArray.length; i++) {
       sum += dataArray[i] * dataArray[i];
     }
 
     const rms = Math.sqrt(sum / dataArray.length);
-
-    // Raw calculated sound input (0-100)
     const rawVolume = Math.min(100, Math.round(rms * 350));
-
-    // Process noise threshold (<5 -> 0) and clamp max mic volume to 75
     let micVolume = processMicVolume(rawVolume);
 
-    // Apply optional backup gain boost
-    let finalVolume = backupGainEnabled ? micVolume + backupGain : micVolume;
+    let finalVolume =
+      customVolumeRef.current > 0 ? customVolumeRef.current : micVolume;
 
-    // Smooth transition & zero-out clean thresholds
     setVolume((prev) => {
       if (finalVolume === 0) return 0;
-
       let smoothed = Math.round(prev * 0.8 + finalVolume * 0.2);
-
-      // Clean snapping at boundaries
       if (smoothed <= 2) smoothed = 0;
-
       return smoothed;
     });
 
     animationRef.current = requestAnimationFrame(updateVolume);
   };
 
+  // 1. Single consolidated Firestore listener & Decay handler
   useEffect(() => {
-    if (!backupGainEnabled) return;
+    let decayTimeout = null;
+    const docRef = doc(db, "dulcoflex-excitometer", "excitometer");
 
-    if (backupGain <= 0) return;
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
 
-    setVolume(backupGain);
+        const isMicEnabled = data.micEnabled ?? false;
+        const currentCustomVol = data.customVolume ?? 0;
+        const currentMode = data.mode ?? "manual";
 
-    const timer = setTimeout(async () => {
-      setVolume(0);
+        setMicEnabled(isMicEnabled);
+        setCustomVolume(currentCustomVol);
+        setMode(currentMode);
 
-      await resetBackupGain();
-    }, 500);
+        if (!isMicEnabled) {
+          setVolume(currentCustomVol);
+        }
 
-    return () => clearTimeout(timer);
-  }, [backupGain, backupGainEnabled]);
+        // Handle decay if customVolume > 0
+        if (currentCustomVol > 0) {
+          if (decayTimeout) clearTimeout(decayTimeout);
 
-  // Trigger Result screen on reaching 100% (Admin Controlled)
+          decayTimeout = setTimeout(async () => {
+            try {
+              setCustomVolume(0);
+
+              if (!isMicEnabled && !showResultRef.current) {
+                setVolume(0);
+              }
+
+              await updateDoc(docRef, { customVolume: 0 });
+            } catch (error) {
+              console.error(
+                "Failed to reset customVolume in Firestore:",
+                error,
+              );
+            }
+          }, 500);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (decayTimeout) clearTimeout(decayTimeout);
+    };
+  }, []);
+
+  // 2. Trigger Result screen when volume reaches 100%
   useEffect(() => {
-    if (volume >= 100) {
+    if (volume >= 100 && !showResult) {
       setShowResult(true);
+      showResultRef.current = true; // Lock the result state
       stopMic();
-    } else if (volume < 100 && showResult) {
-      setShowResult(false);
     }
   }, [volume, showResult]);
 
-  // Manage mic state lifecycle
+  // 3. Manage mic lifecycle based on micEnabled & showResult
   useEffect(() => {
     let mounted = true;
 
     const restartMic = async () => {
       await stopMic();
-
-      if (mounted && micEnabled && !showResult && !backupGainEnabled) {
+      if (mounted && micEnabled && !showResult) {
         await startMic();
       }
     };
@@ -213,16 +203,11 @@ const Home = () => {
       mounted = false;
       stopMic();
     };
-  }, [micEnabled, backupGainEnabled, showResult]);
-
-  useEffect(() => {
-    console.log(volume);
-    console.log(micEnabled, backupGain, "mic enabled");
-  }, [volume, micEnabled, backupGain]);
+  }, [micEnabled, showResult]);
 
   return (
     <div className="home">
-      <Header />
+      <Header showResult={showResult} />
 
       <div className="content">
         {showResult ? (
