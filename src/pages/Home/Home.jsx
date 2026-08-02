@@ -1,12 +1,14 @@
 import Header from "../../components/Header/Header";
 import Meter from "../../components/Meter/Meter";
 import Pillar from "../../components/Pillar/Pillar";
-
+import { db } from "../../firebase-config";
+import { onSnapshot, doc } from "firebase/firestore";
 import "./Home.scss";
 import { useEffect, useState, useRef } from "react";
 
 const Home = () => {
   const [volume, setVolume] = useState(0);
+  const [micEnabled, setMicEnabled] = useState(false);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -14,7 +16,40 @@ const Home = () => {
   const animationRef = useRef(null);
   const streamRef = useRef(null);
 
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(db, "dulcoflex-excitometer", "excitometer"),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setMicEnabled(snapshot.data().micEnabled);
+        }
+      },
+    );
+
+    return unsubscribe;
+  }, []);
+
+  const stopMic = async () => {
+    cancelAnimationFrame(animationRef.current);
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      await audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+    dataArrayRef.current = null;
+
+    setVolume(0);
+  };
+
   const startMic = async () => {
+    if (streamRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -69,20 +104,16 @@ const Home = () => {
   };
 
   useEffect(() => {
-    startMic();
+    if (micEnabled) {
+      startMic();
+    } else {
+      stopMic();
+    }
 
     return () => {
-      cancelAnimationFrame(animationRef.current);
-
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      stopMic();
     };
-  }, []);
+  }, [micEnabled]);
 
   useEffect(() => {
     console.log(volume);
