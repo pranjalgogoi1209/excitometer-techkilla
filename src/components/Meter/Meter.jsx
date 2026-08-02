@@ -7,7 +7,7 @@ import Mic from "../Mic/Mic";
 import "./Meter.scss";
 
 const Meter = ({ volume = 0 }) => {
-  const mapVolumeToAngle = volume => {
+  const mapVolumeToAngle = (volume) => {
     console.log("Volume Meter", volume);
     const MIN_ANGLE = -70;
     const MAX_ANGLE = 70;
@@ -25,7 +25,6 @@ const Meter = ({ volume = 0 }) => {
       <img src={meter} alt="Excitometer Meter" className="meter__image" />
 
       {/* Needle */}
-
       <div
         className="meter__needle-wrapper"
         style={{

@@ -1,39 +1,87 @@
 .pillar {
-  width: 60vh;
+  width: 65vh;
   display: flex;
   justify-content: center;
   flex-shrink: 0;
   margin-top: auto;
+  position: absolute;
 
   &__wrapper {
     position: relative;
     width: 100%;
+    border: 2px solid red;
   }
 
   &__image {
     width: 100%;
     display: block;
+
     user-select: none;
     pointer-events: none;
   }
 
-  &__fill {
+  /* ===========================
+     LED Container
+  ============================ */
+
+  &__leds {
     position: absolute;
-    left: 0;
-    bottom: 0;
+    top: 3%;
 
-    width: 100%;
-    height: 0;
+    width: 16%;
+    height: 75%;
 
-    // Temporary
-    background: rgba(0, 255, 0, 0.25);
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
   }
+
+  &__leds--left {
+    left: 52.5%;
+    transform: translateX(-50%);
+  }
+
+  &__leds--right {
+    right: 52.5%;
+    transform: translateX(50%);
+  }
+
+  &__led {
+    width: 100%;
+    height: 2.4%;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    transition: all 150ms ease;
+  }
+
+  &__led--active {
+    background: var(--led-color);
+
+    box-shadow:
+      inset 0 0 3px rgba(255, 255, 255, 0.4),
+      0 0 4px var(--led-color),
+      0 0 10px var(--led-color),
+      0 0 18px var(--led-color);
+
+    transition: all 120ms ease;
+  }
+
+  /* ===========================
+     Position
+  ============================ */
 
   &--left {
     justify-content: flex-start;
+    left: 0;
+    bottom: 0;
   }
 
   &--right {
     justify-content: flex-end;
+    right: 0;
+    bottom: 0;
   }
 }
