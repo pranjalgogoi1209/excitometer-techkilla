@@ -7,7 +7,7 @@ import Meter from "../../components/Meter/Meter";
 import Pillar from "../../components/Pillar/Pillar";
 import Result from "../../components/Result/Result";
 import { db } from "../../firebase-config";
-import { onSnapshot, doc } from "firebase/firestore";
+import { onSnapshot, doc, updateDoc } from "firebase/firestore";
 
 // Helper function to handle mic threshold & enforce 75 max cap
 const processMicVolume = (rawVolume) => {
@@ -33,6 +33,8 @@ const Home = () => {
   const [backupGain, setBackupGain] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  const [manualVolume, setManualVolume] = useState(0);
+
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
@@ -49,11 +51,10 @@ const Home = () => {
 
           setMicEnabled(data.micEnabled ?? false);
           setBackupGainEnabled(data.backupGainEnabled ?? false);
-          setBackupGain(data.backupGain ?? 20);
 
           // If Admin updates manualVolume directly from Admin Panel (e.g., 0-100)
-          if (data.manualVolume !== undefined) {
-            setVolume(data.manualVolume);
+          if (data.backupGain !== undefined) {
+            setBackupGain(data.backupGain ?? 20);
           }
         }
       },
@@ -61,6 +62,12 @@ const Home = () => {
 
     return unsubscribe;
   }, []);
+
+  const resetBackupGain = async () => {
+    await updateDoc(doc(db, "dulcoflex-excitometer", "excitometer"), {
+      backupGain: 0,
+    });
+  };
 
   const stopMic = async () => {
     if (animationRef.current) {
@@ -118,6 +125,11 @@ const Home = () => {
   };
 
   const updateVolume = () => {
+    if (backupGainEnabled) {
+      animationRef.current = requestAnimationFrame(updateVolume);
+      return;
+    }
+
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
 
@@ -157,6 +169,22 @@ const Home = () => {
     animationRef.current = requestAnimationFrame(updateVolume);
   };
 
+  useEffect(() => {
+    if (!backupGainEnabled) return;
+
+    if (backupGain <= 0) return;
+
+    setVolume(backupGain);
+
+    const timer = setTimeout(async () => {
+      setVolume(0);
+
+      await resetBackupGain();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [backupGain, backupGainEnabled]);
+
   // Trigger Result screen on reaching 100% (Admin Controlled)
   useEffect(() => {
     if (volume >= 100) {
@@ -174,7 +202,7 @@ const Home = () => {
     const restartMic = async () => {
       await stopMic();
 
-      if (mounted && micEnabled && !showResult) {
+      if (mounted && micEnabled && !showResult && !backupGainEnabled) {
         await startMic();
       }
     };
@@ -185,7 +213,7 @@ const Home = () => {
       mounted = false;
       stopMic();
     };
-  }, [micEnabled, backupGainEnabled, backupGain, showResult]);
+  }, [micEnabled, backupGainEnabled, showResult]);
 
   useEffect(() => {
     console.log(volume);
