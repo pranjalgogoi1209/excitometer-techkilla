@@ -178,13 +178,12 @@ const Home = () => {
 
           decayTimeout = setTimeout(async () => {
             try {
-              setCustomVolume(0);
-
               if (
                 !isMicEnabled &&
                 !showResultRef.current &&
                 currentCustomVol < 100
               ) {
+                setCustomVolume(0);
                 setVolume(0);
                 await updateDoc(docRef, { customVolume: 0 });
               }
@@ -267,6 +266,27 @@ const Home = () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  console.log(
+    "custom volume",
+    customVolume,
+    "volume",
+    volume,
+    "micEnabled",
+    micEnabled,
+    "mode",
+    mode,
+  );
+
+  useEffect(() => {
+    if (showResult && customVolume === 0) {
+      volumeLockedRef.current = false;
+      showResultRef.current = false;
+
+      setVolume(0);
+      setShowResult(false);
+    }
+  }, [customVolume, showResult]);
 
   return (
     <div className="home">
