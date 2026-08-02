@@ -3,7 +3,7 @@ import pillarRight from "../../assets/images/pillar-right.png";
 
 import "./Pillar.scss";
 
-const Pillar = ({ side }) => {
+const Pillar = ({ side, volume }) => {
   const pillarImage = side === "left" ? pillarLeft : pillarRight;
 
   return (

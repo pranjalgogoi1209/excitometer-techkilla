@@ -93,11 +93,11 @@ const Home = () => {
       <Header />
 
       <div className="content">
-        <Pillar side="left" />
+        <Pillar side="left" volume={volume} />
 
         <Meter />
 
-        <Pillar side="right" />
+        <Pillar side="right" volume={volume} />
       </div>
     </div>
   );
