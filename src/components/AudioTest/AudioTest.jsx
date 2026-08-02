@@ -1,13 +1,6 @@
-import Header from "../../components/Header/Header";
-import Meter from "../../components/Meter/Meter";
-import Pillar from "../../components/Pillar/Pillar";
-import Wave from "../../components/Wave/Wave";
-import Mic from "../../components/Mic/Mic";
+import { useEffect, useRef, useState } from "react";
 
-import "./Home.scss";
-import { useEffect, useState, useRef } from "react";
-
-const Home = () => {
+export default function Excitometer() {
   const [volume, setVolume] = useState(0);
 
   const audioContextRef = useRef(null);
@@ -91,26 +84,28 @@ const Home = () => {
   }, [volume]);
 
   return (
-    <div className="home">
-      <Header />
+    <div style={{ padding: 30 }}>
+      <h1>Excitometer</h1>
 
-      <div className="content">
-        <Pillar side="left" />
+      <h2>{volume}</h2>
 
-        <Meter />
-
-        <Pillar side="right" />
-      </div>
-
-      <div className="bottom">
-        <Wave />
-
-        <Mic />
-
-        <Wave />
+      <div
+        style={{
+          width: "100%",
+          height: 30,
+          background: "#ddd",
+          borderRadius: 10,
+        }}
+      >
+        <div
+          style={{
+            width: `${volume}%`,
+            height: "100%",
+            background: volume < 40 ? "green" : volume < 70 ? "orange" : "red",
+            transition: "0.05s",
+          }}
+        />
       </div>
     </div>
   );
-};
-
-export default Home;
+}
