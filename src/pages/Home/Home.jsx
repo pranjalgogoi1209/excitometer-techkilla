@@ -10,19 +10,11 @@ import { db } from "../../firebase-config";
 import { onSnapshot, doc, updateDoc } from "firebase/firestore";
 
 // Helper function to handle mic threshold & enforce 75 max cap
-const processMicVolume = (rawVolume) => {
-  const THRESHOLD = 5;
-  const MAX_MIC_OUTPUT = 75;
-
-  if (rawVolume <= THRESHOLD) {
-    return 0;
-  }
-
-  const scaled = ((rawVolume - THRESHOLD) / (100 - THRESHOLD)) * MAX_MIC_OUTPUT;
-  return Math.min(MAX_MIC_OUTPUT, Math.round(scaled));
-};
 
 const Home = () => {
+  const volumeLockedRef = useRef(false);
+  const minThresholdRef = useRef(5);
+  const maxThresholdRef = useRef(85);
   const [volume, setVolume] = useState(0);
   const [micEnabled, setMicEnabled] = useState(false);
   const [customVolume, setCustomVolume] = useState(0);
@@ -34,6 +26,17 @@ const Home = () => {
   const dataArrayRef = useRef(null);
   const animationRef = useRef(null);
   const streamRef = useRef(null);
+
+  const processMicVolume = (rawVolume, minThreshold = 5, maxThreshold = 85) => {
+    if (rawVolume <= minThreshold) {
+      return 0;
+    }
+
+    const scaled =
+      ((rawVolume - minThreshold) / (100 - minThreshold)) * maxThreshold;
+
+    return Math.min(maxThreshold, Math.round(scaled));
+  };
 
   // Ref to hold current customVolume inside requestAnimationFrame loop
   const customVolumeRef = useRef(0);
@@ -97,6 +100,8 @@ const Home = () => {
   };
 
   const updateVolume = () => {
+    if (volumeLockedRef.current) return;
+
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
 
@@ -111,10 +116,21 @@ const Home = () => {
 
     const rms = Math.sqrt(sum / dataArray.length);
     const rawVolume = Math.min(100, Math.round(rms * 350));
-    let micVolume = processMicVolume(rawVolume);
+    const micVolume = processMicVolume(
+      rawVolume,
+      minThresholdRef.current,
+      maxThresholdRef.current,
+    );
 
     if (customVolumeRef.current > 0) {
-      setVolume(customVolumeRef.current);
+      const custom = Math.min(100, customVolumeRef.current);
+
+      setVolume(custom);
+
+      // Don't allow the mic to overwrite the custom value
+      if (custom >= 100) {
+        return;
+      }
     } else {
       setVolume((prev) => {
         if (micVolume === 0) return 0;
@@ -146,6 +162,11 @@ const Home = () => {
         setMicEnabled(isMicEnabled);
         setCustomVolume(currentCustomVol);
         setMode(currentMode);
+        const min = data.minThreshold ?? 5;
+        const max = data.maxThreshold ?? 85;
+
+        minThresholdRef.current = min;
+        maxThresholdRef.current = max;
 
         if (!isMicEnabled) {
           setVolume(currentCustomVol);
@@ -159,11 +180,14 @@ const Home = () => {
             try {
               setCustomVolume(0);
 
-              if (!isMicEnabled && !showResultRef.current) {
+              if (
+                !isMicEnabled &&
+                !showResultRef.current &&
+                currentCustomVol < 100
+              ) {
                 setVolume(0);
+                await updateDoc(docRef, { customVolume: 0 });
               }
-
-              await updateDoc(docRef, { customVolume: 0 });
             } catch (error) {
               console.error(
                 "Failed to reset customVolume in Firestore:",
@@ -183,11 +207,17 @@ const Home = () => {
 
   // 2. Trigger Result screen when volume reaches 100%
   useEffect(() => {
-    console.log("volume from useeffect", volume);
     if (volume >= 100 && !showResult) {
-      setShowResult(true);
-      showResultRef.current = true; // Lock the result state
-      stopMic();
+      volumeLockedRef.current = true;
+      setVolume(100);
+
+      showResultRef.current = true;
+
+      stopMic().then(() => {
+        setTimeout(() => {
+          setShowResult(true);
+        }, 1000);
+      });
     }
   }, [volume, showResult]);
 
@@ -209,6 +239,34 @@ const Home = () => {
       stopMic();
     };
   }, [micEnabled, showResult]);
+
+  useEffect(() => {
+    const docRef = doc(db, "dulcoflex-excitometer", "excitometer");
+
+    const handleKeyDown = async (e) => {
+      const key = e.key;
+
+      // Only allow number keys 0-9
+      if (!/^[0-9]$/.test(key)) return;
+
+      // 1 -> 10, 2 -> 20, ..., 9 -> 90, 0 -> 100
+      const value = key === "0" ? 100 : Number(key) * 10;
+
+      try {
+        await updateDoc(docRef, {
+          customVolume: value,
+        });
+      } catch (err) {
+        console.error("Failed to update customVolume:", err);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="home">
