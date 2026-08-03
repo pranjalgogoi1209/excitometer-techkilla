@@ -15,6 +15,7 @@ const Home = () => {
   const volumeLockedRef = useRef(false);
   const minThresholdRef = useRef(5);
   const maxThresholdRef = useRef(85);
+  const customControlRef = useRef(false);
   const [volume, setVolume] = useState(0);
   const [micEnabled, setMicEnabled] = useState(false);
   const [customVolume, setCustomVolume] = useState(0);
@@ -122,15 +123,27 @@ const Home = () => {
       maxThresholdRef.current,
     );
 
-    if (customVolumeRef.current > 0) {
-      const custom = Math.min(100, customVolumeRef.current);
+    if (customControlRef.current) {
+      const target = customVolumeRef.current;
 
-      setVolume(custom);
+      setVolume((prev) => {
+        if (prev === target) {
+          // Animation finished
+          if (target === 0) {
+            customControlRef.current = false;
+          }
+          return prev;
+        }
 
-      // Don't allow the mic to overwrite the custom value
-      if (custom >= 100) {
-        return;
-      }
+        if (prev < target) {
+          return Math.min(prev + 5, target);
+        }
+
+        return Math.max(prev - 5, target);
+      });
+
+      animationRef.current = requestAnimationFrame(updateVolume);
+      return;
     } else {
       setVolume((prev) => {
         if (micVolume === 0) return 0;
@@ -160,6 +173,7 @@ const Home = () => {
         const currentMode = data.mode ?? "manual";
 
         setMicEnabled(isMicEnabled);
+        customControlRef.current = true;
         setCustomVolume(currentCustomVol);
         setMode(currentMode);
         const min = data.minThreshold ?? 5;
@@ -169,7 +183,8 @@ const Home = () => {
         maxThresholdRef.current = max;
 
         if (!isMicEnabled) {
-          setVolume(currentCustomVol);
+          customControlRef.current = true;
+          setCustomVolume(currentCustomVol);
         }
 
         // Handle decay if customVolume > 0
@@ -179,8 +194,11 @@ const Home = () => {
           decayTimeout = setTimeout(async () => {
             try {
               if (!showResultRef.current && currentCustomVol < 100) {
+                console.log(
+                  "FROM FIRESTORE volume reset auto manual 2",
+                  currentCustomVol,
+                );
                 setCustomVolume(0);
-                setVolume(0);
                 await updateDoc(docRef, { customVolume: 0 });
               }
             } catch (error) {
@@ -204,6 +222,7 @@ const Home = () => {
   useEffect(() => {
     if (volume >= 100 && !showResult) {
       volumeLockedRef.current = true;
+      console.log("FROM MIC volume locked at 100%");
       setVolume(100);
 
       showResultRef.current = true;
@@ -279,10 +298,44 @@ const Home = () => {
       volumeLockedRef.current = false;
       showResultRef.current = false;
 
+      console.log("FROM RESULT volume reset when app reset", customVolume);
       setVolume(0);
       setShowResult(false);
     }
   }, [customVolume, showResult]);
+
+  useEffect(() => {
+    if (micEnabled) return;
+
+    let frameId;
+
+    const animate = () => {
+      if (customControlRef.current) {
+        setVolume((prev) => {
+          const target = customVolumeRef.current;
+
+          if (prev === target) {
+            if (target === 0) {
+              customControlRef.current = false;
+            }
+            return prev;
+          }
+
+          if (prev < target) {
+            return Math.min(prev + 5, target);
+          }
+
+          return Math.max(prev - 5, target);
+        });
+      }
+
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [micEnabled]);
 
   return (
     <div className="home">

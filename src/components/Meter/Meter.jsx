@@ -8,7 +8,6 @@ import "./Meter.scss";
 
 const Meter = ({ volume = 0, micEnabled }) => {
   const mapVolumeToAngle = (volume) => {
-    console.log("Volume Meter", volume);
     const MIN_ANGLE = -70;
     const MAX_ANGLE = 70;
 
@@ -16,8 +15,6 @@ const Meter = ({ volume = 0, micEnabled }) => {
   };
 
   const angle = mapVolumeToAngle(volume);
-
-  console.log("Angle According To Volume", angle);
 
   return (
     <section className="meter">
