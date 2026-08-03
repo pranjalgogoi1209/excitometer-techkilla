@@ -136,10 +136,10 @@ const Home = () => {
         }
 
         if (prev < target) {
-          return Math.min(prev + 5, target);
+          return Math.min(prev + 2, target);
         }
 
-        return Math.max(prev - 5, target);
+        return Math.max(prev - 1, target);
       });
 
       animationRef.current = requestAnimationFrame(updateVolume);
@@ -194,10 +194,6 @@ const Home = () => {
           decayTimeout = setTimeout(async () => {
             try {
               if (!showResultRef.current && currentCustomVol < 100) {
-                console.log(
-                  "FROM FIRESTORE volume reset auto manual 2",
-                  currentCustomVol,
-                );
                 setCustomVolume(0);
                 await updateDoc(docRef, { customVolume: 0 });
               }
@@ -207,7 +203,7 @@ const Home = () => {
                 error,
               );
             }
-          }, 500);
+          }, 1000);
         }
       }
     });
@@ -222,7 +218,6 @@ const Home = () => {
   useEffect(() => {
     if (volume >= 100 && !showResult) {
       volumeLockedRef.current = true;
-      console.log("FROM MIC volume locked at 100%");
       setVolume(100);
 
       showResultRef.current = true;
@@ -298,7 +293,6 @@ const Home = () => {
       volumeLockedRef.current = false;
       showResultRef.current = false;
 
-      console.log("FROM RESULT volume reset when app reset", customVolume);
       setVolume(0);
       setShowResult(false);
     }
@@ -322,10 +316,10 @@ const Home = () => {
           }
 
           if (prev < target) {
-            return Math.min(prev + 5, target);
+            return Math.min(prev + 2, target);
           }
 
-          return Math.max(prev - 5, target);
+          return Math.max(prev - 1, target);
         });
       }
 
