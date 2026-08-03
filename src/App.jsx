@@ -10,17 +10,17 @@ function App() {
 
   return (
     <div className="app">
-      <aside className="app__left">
+      {/* <aside className="app__left">
         <SidePanel />
-      </aside>
+      </aside> */}
 
       <main className="app__center">
         <Home />
       </main>
 
-      <aside className="app__right">
+      {/* <aside className="app__right">
         <SidePanel />
-      </aside>
+      </aside> */}
     </div>
   );
 }
